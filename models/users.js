@@ -4,7 +4,6 @@ const userSchema = mongoose.Schema({
   username: {
     type: String,
     required: true,
-    lowercase: true,
     trim: true,
   },
   email: {
@@ -21,6 +20,11 @@ const userSchema = mongoose.Schema({
 
   job: {
     type: String,
+    default: null,
+  },
+  team: {
+    type: String,
+    default: null,
   },
 });
 
