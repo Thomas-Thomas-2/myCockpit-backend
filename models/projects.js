@@ -6,6 +6,7 @@ const projectSchema = mongoose.Schema({
     required: true,
     trim: true,
     unique: true,
+    maxLength: 25,
   },
   slug: {
     type: String,
