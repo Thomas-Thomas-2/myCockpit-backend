@@ -5,6 +5,17 @@ const { checkBody } = require("../modules/checkBody");
 
 const Project = require("../models/projects");
 
+// Get projects
+router.get("/", authJWT, async (req, res) => {
+  try {
+    const projects = await Project.find({ owner: req.userId });
+    res.json({ result: true, projects });
+  } catch (error) {
+    console.log("Error", error);
+    res.status(500).json({ result: false, error: "Error fetching projects" });
+  }
+});
+
 // Post new project
 router.post("/", authJWT, async (req, res) => {
   // req.body check
