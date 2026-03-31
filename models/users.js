@@ -26,6 +26,10 @@ const userSchema = mongoose.Schema({
     type: String,
     default: null,
   },
+  leader: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const User = mongoose.model("users", userSchema);

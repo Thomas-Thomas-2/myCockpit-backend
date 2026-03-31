@@ -19,7 +19,7 @@ router.get("/", authJWT, async (req, res) => {
 // Post new project
 router.post("/", authJWT, async (req, res) => {
   // req.body check
-  if (!checkBody(req.body, ["title", "sportTeam", "industrialisation"])) {
+  if (!checkBody(req.body, ["title", "sportTeam"])) {
     return res
       .status(400)
       .json({ result: false, error: "Missing or empty fields" });
@@ -53,7 +53,7 @@ router.post("/", authJWT, async (req, res) => {
         .json({ result: false, error: "Project already existing for user" });
     }
   } catch (error) {
-    console.log("Error", error);
+    console.error("Error", error);
     return res.status(502).json({
       result: false,
       error: "Server error when checking project, try later",
@@ -62,7 +62,7 @@ router.post("/", authJWT, async (req, res) => {
 
   // Project creation
   const regex = /\s+/g;
-  const slug = title.trim().toLowerCase().replace(regex, "-");
+  const slug = title.trim().toLowerCase().replace(regex, "_");
   try {
     const newProject = await Project.create({
       title,

@@ -5,7 +5,6 @@ const projectSchema = mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    unique: true,
     maxLength: 25,
   },
   slug: {
@@ -85,6 +84,8 @@ const projectSchema = mongoose.Schema({
     default: null,
   },
 });
+
+projectSchema.index({ owner: 1, title: 1 }, { unique: true });
 
 const Project = mongoose.model("projects", projectSchema);
 
