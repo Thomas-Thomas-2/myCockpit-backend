@@ -13,7 +13,10 @@ var projectsRouter = require("./routes/projects");
 
 var app = express();
 
-const allowedOrigins = ["http://localhost:3001"];
+const allowedOrigins = [
+  "http://localhost:3001",
+  "https://my-cockpit-frontend.vercel.app/",
+];
 
 const corsOptions = {
   origin: (origin, callback) => {

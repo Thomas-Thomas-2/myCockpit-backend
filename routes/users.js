@@ -50,11 +50,11 @@ router.post("/signup", async (req, res) => {
     res.cookie("access_token", token, {
       httpOnly: true,
       // En prod
-      // sameSite: "none",
-      // secure: true,
+      sameSite: "none",
+      secure: true,
       // En dev
-      sameSite: "lax",
-      secure: false,
+      // sameSite: "lax",
+      // secure: false,
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
     });
@@ -102,11 +102,11 @@ router.post("/signin", async (req, res) => {
     res.cookie("access_token", token, {
       httpOnly: true,
       // En prod
-      // sameSite: "none",
-      // secure: true,
+      sameSite: "none",
+      secure: true,
       // En dev
-      sameSite: "lax",
-      secure: false,
+      // sameSite: "lax",
+      // secure: false,
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
     });
@@ -124,11 +124,11 @@ router.post("/logout", (req, res) => {
   res.clearCookie("access_token", {
     httpOnly: true,
     // En prod
-    // sameSite: "none",
-    // secure: true,
+    sameSite: "none",
+    secure: true,
     // En dev
-    sameSite: "lax",
-    secure: false,
+    // sameSite: "lax",
+    // secure: false,
     path: "/",
   });
   return res.status(200).json({ result: true });
