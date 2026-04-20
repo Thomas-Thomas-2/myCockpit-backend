@@ -102,14 +102,18 @@ router.post("/", authJWT, async (req, res) => {
 router.delete("/:projectId", authJWT, async (req, res) => {
   // Check project in BDD
   try {
-    const projectExisting = await Project.findOne({
-      _id: req.params.projectId,
-      owner: req.userId,
-    });
+    const projectExisting = await Project.findByIdAndDelete(
+      req.params.projectId,
+    );
     if (!projectExisting) {
       return res
         .status(409)
-        .json({ result: false, error: "Project not existing for user" });
+        .json({ result: false, error: "Project not existing." });
+    } else {
+      return res.json({
+        result: true,
+        message: "Project deleted",
+      });
     }
   } catch (error) {
     console.log("Error", error);
@@ -117,31 +121,6 @@ router.delete("/:projectId", authJWT, async (req, res) => {
       result: false,
       error: "Server error when checking project, try later",
     });
-  }
-
-  // Project deletion
-  try {
-    const deleteProject = await Project.deleteOne({
-      _id: req.params.projectId,
-      owner: req.userId,
-    });
-
-    if (deleteProject.deletedCount > 0) {
-      return res.json({
-        result: true,
-        message: "Project deleted",
-      });
-    } else {
-      return res.json({
-        result: false,
-        message: "Project not deleted, error",
-      });
-    }
-  } catch (error) {
-    console.log("Error", error);
-    return res
-      .status(502)
-      .json({ result: false, error: "2 Server error, try later" });
   }
 });
 
