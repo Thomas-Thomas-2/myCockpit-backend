@@ -46,7 +46,6 @@ router.post("/signup", async (req, res) => {
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
-    console.log("Token OK");
     // Set cookie
     res.cookie("access_token", token, {
       httpOnly: true,
@@ -59,7 +58,6 @@ router.post("/signup", async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
     });
-    console.log("Cookie OK");
 
     // Answer
     res.json({ result: true });
