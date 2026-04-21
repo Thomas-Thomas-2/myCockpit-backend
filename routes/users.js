@@ -9,7 +9,9 @@ const { authJWT } = require("../middlewares/authJWT");
 // Signup new user
 router.post("/signup", async (req, res) => {
   // req.body check
-  if (!checkBody(req.body, ["username", "email", "password"])) {
+  if (
+    !checkBody(req.body, ["username", "email", "password", "team", "leader"])
+  ) {
     return res
       .status(400)
       .json({ result: false, error: "Missing or empty fields" });
@@ -32,6 +34,31 @@ router.post("/signup", async (req, res) => {
       .json({ result: false, error: "Server error, try later" });
   }
 
+  // Check if leader already exists for team
+  try {
+    if (leader === "true") {
+      const leaderExisting = await User.findOne({ team, leader: true });
+      if (leaderExisting) {
+        return res.status(409).json({
+          result: false,
+          error: "Leader already exists, you can't select this option.",
+        });
+      }
+    }
+
+    const userExisting = await User.findOne({ email });
+    if (userExisting) {
+      return res
+        .status(409)
+        .json({ result: false, error: "User already existing" });
+    }
+  } catch (error) {
+    console.log("Error", error);
+    return res
+      .status(502)
+      .json({ result: false, error: "Server error, try later" });
+  }
+
   // User creation
   const hashedPassword = bcrypt.hashSync(password, 10);
   try {
@@ -41,12 +68,15 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       job,
       team,
-      leader,
+      leader: leader === "true",
     });
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-    console.log("Token OK");
+    const token = jwt.sign(
+      { userId: newUser._id, team: newUser.team, leader: newUser.leader },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      },
+    );
     // Set cookie
     res.cookie("access_token", token, {
       httpOnly: true,
@@ -59,7 +89,6 @@ router.post("/signup", async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
     });
-    console.log("Cookie OK");
 
     // Answer
     res.json({ result: true });
@@ -98,9 +127,13 @@ router.post("/signin", async (req, res) => {
         .json({ result: false, error: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { userId: user._id, team: user.team, leader: user.leader },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      },
+    );
     // Set cookie
     res.cookie("access_token", token, {
       httpOnly: true,
@@ -140,7 +173,7 @@ router.post("/logout", (req, res) => {
 // Get info about user connected / check connection need
 router.get("/me", authJWT, async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.userId;
     const user = await User.findById(userId);
     if (!user) {
       return res.status(401).json({ result: false, error: "Not authorized" });
@@ -149,6 +182,8 @@ router.get("/me", authJWT, async (req, res) => {
     return res.status(200).json({
       result: true,
       username: user.username,
+      team: user.team,
+      leader: user.leader,
     });
   } catch (error) {
     return res.status(401).json({ result: false, error: "Not authorized" });

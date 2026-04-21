@@ -7,7 +7,7 @@ function authJWT(req, res, next) {
       return res.status(401).json({ result: false, error: "Not authorized" });
     }
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = payload.userId;
+    req.user = payload;
     next();
   } catch (error) {
     return res.status(401).json({ result: false, error: "Not authorized" });
