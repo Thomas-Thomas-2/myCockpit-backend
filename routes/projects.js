@@ -8,7 +8,12 @@ const Project = require("../models/projects");
 // Get projects
 router.get("/", authJWT, async (req, res) => {
   try {
-    const projects = await Project.find({ owner: req.userId });
+    const { userId, team, leader } = req.user;
+
+    const projects = leader
+      ? await Project.find({ ownerTeam: team })
+      : await Project.find({ owner: userId });
+
     res.json({ result: true, projects });
   } catch (error) {
     console.log("Error", error);
@@ -46,7 +51,10 @@ router.post("/", authJWT, async (req, res) => {
 
   // Check project in BDD
   try {
-    const projectExisting = await Project.findOne({ title, owner: req.userId });
+    const projectExisting = await Project.findOne({
+      title,
+      owner: req.user.userId,
+    });
     if (projectExisting) {
       return res
         .status(409)
@@ -68,7 +76,8 @@ router.post("/", authJWT, async (req, res) => {
       title,
       slug,
       description,
-      owner: req.userId,
+      owner: req.user.userId,
+      ownerTeam: req.user.team,
       sportTeam,
       productEngineer,
       kickOff,
@@ -156,7 +165,7 @@ router.patch("/:projectId", authJWT, async (req, res) => {
   try {
     const projectExisting = await Project.findOne({
       _id: req.params.projectId,
-      owner: req.userId,
+      owner: req.user.userId,
     });
     if (!projectExisting) {
       return res

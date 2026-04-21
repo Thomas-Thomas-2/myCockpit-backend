@@ -23,6 +23,10 @@ const projectSchema = mongoose.Schema({
     ref: "users",
     required: true,
   },
+  ownerTeam: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
