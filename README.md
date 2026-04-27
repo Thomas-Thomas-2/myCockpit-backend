@@ -20,7 +20,7 @@ The version deployed currently is the version 1 which is still under constructio
 ## Tech Stack
 - Node.js
 - Express
-- MongoDB
+- MongoDB (migration to PostgreSQL ongoing)
 - Mongoose
 - JWT
 - bcrypt
