@@ -50,3 +50,6 @@ This backend is deployed on Render : https://mycockpit-backend.onrender.com
 ## Demo
 Watch the demonstration : <br>
 COMING SOON
+
+## Future improvements
+- Switch database to PostgreSQL ;
