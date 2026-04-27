@@ -23,7 +23,7 @@ const pool = new Pool({
 const testConnection = async () => {
   try {
     const result = await pool.query("SELECT NOW()");
-    console.log("Connection DB OK", result);
+    console.log("Connection DB OK");
   } catch (error) {
     console.error("Connection error:", error);
   }

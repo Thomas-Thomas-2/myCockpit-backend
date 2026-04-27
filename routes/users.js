@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const { authJWT } = require("../middlewares/authJWT");
+const pool = require("../models/connection");
 
 // Signup new user
 router.post("/signup", async (req, res) => {
@@ -21,8 +22,13 @@ router.post("/signup", async (req, res) => {
 
   // Check user in BDD
   try {
-    const userExisting = await User.findOne({ email });
-    if (userExisting) {
+    // const userExisting = await User.findOne({ email });
+    const userExisting = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email.trim().toLowerCase()],
+    );
+
+    if (userExisting.rows[0]) {
       return res
         .status(409)
         .json({ result: false, error: "User already existing" });
@@ -37,20 +43,17 @@ router.post("/signup", async (req, res) => {
   // Check if leader already exists for team
   try {
     if (leader === "true") {
-      const leaderExisting = await User.findOne({ team, leader: true });
-      if (leaderExisting) {
+      // const leaderExisting = await User.findOne({ team, leader: true });
+      const leaderExisting = await pool.query(
+        "SELECT * FROM users WHERE team = $1 AND leader = true",
+        [team.trim()],
+      );
+      if (leaderExisting.rows[0]) {
         return res.status(409).json({
           result: false,
           error: "Leader already exists, you can't select this option.",
         });
       }
-    }
-
-    const userExisting = await User.findOne({ email });
-    if (userExisting) {
-      return res
-        .status(409)
-        .json({ result: false, error: "User already existing" });
     }
   } catch (error) {
     console.log("Error", error);
@@ -62,16 +65,32 @@ router.post("/signup", async (req, res) => {
   // User creation
   const hashedPassword = bcrypt.hashSync(password, 10);
   try {
-    const newUser = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      job,
-      team,
-      leader: leader === "true",
-    });
+    const leaderValue = leader === "true" ? true : false;
+    const newUser = await pool.query(
+      "INSERT INTO users (username, email, password, job, team, leader) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id,team,leader",
+      [
+        username.trim(),
+        email.trim().toLowerCase(),
+        hashedPassword,
+        job,
+        team.trim(),
+        leaderValue,
+      ],
+    );
+    // const newUser = await User.create({
+    //   username,
+    //   email,
+    //   password: hashedPassword,
+    //   job,
+    //   team,
+    //   leader: leader === "true",
+    // });
     const token = jwt.sign(
-      { userId: newUser._id, team: newUser.team, leader: newUser.leader },
+      {
+        userId: newUser.rows[0].id,
+        team: newUser.rows[0].team,
+        leader: newUser.rows[0].leader,
+      },
       process.env.JWT_SECRET,
       {
         expiresIn: "1d",
