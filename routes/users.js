@@ -3,7 +3,7 @@ var router = express.Router();
 const { checkBody } = require("../modules/checkBody");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/users");
+// const User = require("../models/users");
 const { authJWT } = require("../middlewares/authJWT");
 const pool = require("../models/connection");
 
@@ -132,14 +132,18 @@ router.post("/signin", async (req, res) => {
 
   // Check user
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
+    // const user = await User.findOne({ email });
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email.trim().toLowerCase(),
+    ]);
+
+    if (!user.rows[0]) {
       return res.status(401).json({
         result: false,
         error: "Email invalid, not existing or wrong password",
       });
     }
-    const passwordCheck = bcrypt.compareSync(password, user.password);
+    const passwordCheck = bcrypt.compareSync(password, user.rows[0].password);
     if (!passwordCheck) {
       return res
         .status(401)
@@ -147,7 +151,11 @@ router.post("/signin", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, team: user.team, leader: user.leader },
+      {
+        userId: user.rows[0].id,
+        team: user.rows[0].team,
+        leader: user.rows[0].leader,
+      },
       process.env.JWT_SECRET,
       {
         expiresIn: "1d",
@@ -166,8 +174,9 @@ router.post("/signin", async (req, res) => {
       path: "/",
     });
 
-    res.json({ result: true, username: user.username });
+    res.json({ result: true, username: user.rows[0].username });
   } catch (error) {
+    console.log("Error", error);
     return res
       .status(502)
       .json({ result: false, error: "Server error, try later" });
@@ -193,16 +202,20 @@ router.post("/logout", (req, res) => {
 router.get("/me", authJWT, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const user = await User.findById(userId);
-    if (!user) {
+    // const user = await User.findById(userId);
+    const user = await pool.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    if (!user.rows[0]) {
       return res.status(401).json({ result: false, error: "Not authorized" });
     }
 
     return res.status(200).json({
       result: true,
-      username: user.username,
-      team: user.team,
-      leader: user.leader,
+      username: user.rows[0].username,
+      team: user.rows[0].team,
+      leader: user.rows[0].leader,
     });
   } catch (error) {
     return res.status(401).json({ result: false, error: "Not authorized" });
