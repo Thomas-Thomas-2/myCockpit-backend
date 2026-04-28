@@ -3,7 +3,7 @@
 ## Summary
 - **Project type**: Backend API for web application - Internal tool
 - **Status**: V1 ongoing - Target : MVP
-- **Built with**: Node.js, Express, MongoDB, Mongoose
+- **Built with**: Node.js, Express, PostgreSQL
 - **Purpose**: Backend API for a web application designed to help methods engineers to manage their projects.
 
 ## Overview
@@ -20,8 +20,7 @@ The version deployed currently is the version 1 which is still under constructio
 ## Tech Stack
 - Node.js
 - Express
-- MongoDB (migration to PostgreSQL ongoing)
-- Mongoose
+- PostgreSQL
 - JWT
 - bcrypt
 
@@ -40,7 +39,7 @@ npm run start
 ## Environment variables
 Create a .env file at the root of the project. <br>
 For local launch, set these with your own values: <br>
-CONNECTION_STRING=mongodb+srv://... <br>
+POSTGRES_URL="postgres://..." <br>
 JWT_SECRET=your_secret <br>
 FRONT_URL=http://localhost:3001 <br>
 
@@ -52,4 +51,4 @@ Watch the demonstration : <br>
 COMING SOON
 
 ## Future improvements
-- Switch database to PostgreSQL ;
+- Switch to TypeScript ;
