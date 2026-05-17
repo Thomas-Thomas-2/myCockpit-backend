@@ -7,6 +7,35 @@ const jwt = require("jsonwebtoken");
 const { authJWT } = require("../middlewares/authJWT");
 const pool = require("../models/connection");
 
+// Helper ----------------------------
+const setCookie = (res, userData) => {
+  const token = jwt.sign(
+    {
+      userId: userData.rows[0].id,
+      team: userData.rows[0].team,
+      leader: userData.rows[0].leader,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    },
+  );
+  // Set cookie
+  res.cookie("access_token", token, {
+    httpOnly: true,
+    // En prod
+    sameSite: "none",
+    secure: true,
+    // En dev
+    // sameSite: "lax",
+    // secure: false,
+    maxAge: 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+};
+
+// -----------------------------------
+
 // Signup new user
 router.post("/signup", async (req, res) => {
   // req.body check
@@ -85,29 +114,8 @@ router.post("/signup", async (req, res) => {
     //   team,
     //   leader: leader === "true",
     // });
-    const token = jwt.sign(
-      {
-        userId: newUser.rows[0].id,
-        team: newUser.rows[0].team,
-        leader: newUser.rows[0].leader,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      },
-    );
-    // Set cookie
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      // En prod
-      sameSite: "none",
-      secure: true,
-      // En dev
-      // sameSite: "lax",
-      // secure: false,
-      maxAge: 24 * 60 * 60 * 1000,
-      path: "/",
-    });
+
+    setCookie(res, newUser);
 
     // Answer
     res.json({ result: true });
@@ -150,29 +158,7 @@ router.post("/signin", async (req, res) => {
         .json({ result: false, error: "Invalid email or password" });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user.rows[0].id,
-        team: user.rows[0].team,
-        leader: user.rows[0].leader,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      },
-    );
-    // Set cookie
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      // En prod
-      sameSite: "none",
-      secure: true,
-      // En dev
-      // sameSite: "lax",
-      // secure: false,
-      maxAge: 24 * 60 * 60 * 1000,
-      path: "/",
-    });
+    setCookie(res, user);
 
     res.json({ result: true, username: user.rows[0].username });
   } catch (error) {
@@ -219,6 +205,44 @@ router.get("/me", authJWT, async (req, res) => {
     });
   } catch (error) {
     return res.status(401).json({ result: false, error: "Not authorized" });
+  }
+});
+
+// Modify role
+router.patch("/role", authJWT, async (req, res) => {
+  try {
+    const { userId, team, leader } = req.user;
+
+    if (leader) {
+      const updatedUser = await pool.query(
+        "UPDATE users SET leader = false WHERE id = $1 RETURNING *",
+        [userId],
+      );
+      setCookie(res, updatedUser);
+
+      return res.json({ result: true });
+    }
+
+    const checkLeader = await pool.query(
+      "SELECT id FROM users WHERE team = $1 AND leader = true",
+      [team],
+    );
+
+    if (checkLeader.rows[0]) {
+      return res
+        .status(409)
+        .json({ result: false, error: "Team already has a leader." });
+    } else {
+      const updatedUser = await pool.query(
+        "UPDATE users SET leader = true WHERE id = $1 RETURNING *",
+        [userId],
+      );
+      setCookie(res, updatedUser);
+      return res.json({ result: true });
+    }
+  } catch (error) {
+    console.log("Error", error);
+    return res.json({ result: false, error: "Internal servor error" });
   }
 });
 

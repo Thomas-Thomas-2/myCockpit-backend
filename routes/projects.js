@@ -22,9 +22,10 @@ router.get("/", authJWT, async (req, res) => {
     //   : await Project.find({ owner: userId });
 
     const projects = leader
-      ? await pool.query('SELECT * FROM projects WHERE "ownerTeam" = $1', [
-          team,
-        ])
+      ? await pool.query(
+          'SELECT projects.id AS project_id, projects.title, projects.slug, projects.description, projects.owner, projects."ownerTeam", projects."sportTeam", projects."productEngineer", projects."kickOff", projects."feasiOk", projects."creaOk", projects."selectionOk", projects."shipmentOk", projects.industrialisation, projects."kickOffIndus", projects."goIndus", projects."trialRun", projects."pilotRun", projects."goProd", projects.status, users.id AS user_id, users.username FROM projects JOIN users ON projects."owner" = users.id WHERE "ownerTeam" = $1',
+          [team],
+        )
       : await pool.query("SELECT * FROM projects WHERE owner = $1", [userId]);
 
     res.json({ result: true, projects: projects.rows });
