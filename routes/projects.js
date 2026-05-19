@@ -26,7 +26,10 @@ router.get("/", authJWT, async (req, res) => {
           'SELECT projects.id AS project_id, projects.title, projects.slug, projects.description, projects.owner, projects."ownerTeam", projects."sportTeam", projects."productEngineer", projects."kickOff", projects."feasiOk", projects."creaOk", projects."selectionOk", projects."shipmentOk", projects.industrialisation, projects."kickOffIndus", projects."goIndus", projects."trialRun", projects."pilotRun", projects."goProd", projects.status, users.id AS user_id, users.username FROM projects JOIN users ON projects."owner" = users.id WHERE "ownerTeam" = $1',
           [team],
         )
-      : await pool.query("SELECT * FROM projects WHERE owner = $1", [userId]);
+      : await pool.query(
+          'SELECT projects.id AS project_id, projects.title, projects.slug, projects.description, projects.owner, projects."ownerTeam", projects."sportTeam", projects."productEngineer", projects."kickOff", projects."feasiOk", projects."creaOk", projects."selectionOk", projects."shipmentOk", projects.industrialisation, projects."kickOffIndus", projects."goIndus", projects."trialRun", projects."pilotRun", projects."goProd", projects.status, users.id AS user_id, users.username FROM projects JOIN users ON projects."owner" = users.id WHERE owner = $1',
+          [userId],
+        );
 
     res.json({ result: true, projects: projects.rows });
   } catch (error) {
@@ -154,19 +157,20 @@ router.post("/", authJWT, async (req, res) => {
 
 // Delete project
 router.delete("/:projectId", authJWT, async (req, res) => {
-  // Check project in BDD
+  // Check project in BDD & delete
   try {
     // const projectExisting = await Project.findByIdAndDelete(
     //   req.params.projectId,
     // );
     const projectExisting = await pool.query(
-      "DELETE FROM projects WHERE id = $1",
-      [req.params.projectId],
+      "DELETE FROM projects WHERE id = $1 AND owner = $2 RETURNING *",
+      [req.params.projectId, req.user.userId],
     );
     if (projectExisting.rowCount === 0) {
-      return res
-        .status(409)
-        .json({ result: false, error: "Project not existing." });
+      return res.status(409).json({
+        result: false,
+        error: "Project not existing or not authorized.",
+      });
     } else {
       return res.json({
         result: true,
@@ -185,7 +189,10 @@ router.delete("/:projectId", authJWT, async (req, res) => {
 // Patch  project
 router.patch("/:projectId", authJWT, async (req, res) => {
   // req.body check
-  if (!checkBody(req.body, ["title", "sportTeam"])) {
+  if (
+    !checkBody(req.body, ["title", "sportTeam"]) &&
+    !checkBody(req.body, ["status"])
+  ) {
     return res
       .status(400)
       .json({ result: false, error: "Missing or empty fields" });
@@ -209,13 +216,16 @@ router.patch("/:projectId", authJWT, async (req, res) => {
     goProd,
     status,
   } = req.body;
+  console.log("body", req.body);
+  console.log("status", status);
 
   // Check project in BDD
+
+  // const projectExisting = await Project.findOne({
+  //   _id: req.params.projectId,
+  //   owner: req.user.userId,
+  // });
   try {
-    // const projectExisting = await Project.findOne({
-    //   _id: req.params.projectId,
-    //   owner: req.user.userId,
-    // });
     const projectExisting = await pool.query(
       "SELECT * FROM projects WHERE id = $1 AND owner = $2",
       [req.params.projectId, req.user.userId],
@@ -223,7 +233,7 @@ router.patch("/:projectId", authJWT, async (req, res) => {
     if (!projectExisting.rows[0]) {
       return res
         .status(404)
-        .json({ result: false, error: "Project not found" });
+        .json({ result: false, error: "Project not found or not authorized" });
     }
   } catch (error) {
     console.error("Error", error);
@@ -234,6 +244,27 @@ router.patch("/:projectId", authJWT, async (req, res) => {
   }
 
   // Project modification
+  // Status modification only
+  if (checkBody(req.body, ["status"])) {
+    try {
+      const modifiedProject = await pool.query(
+        "UPDATE projects SET status=$1 WHERE id = $2 RETURNING *",
+        [status, req.params.projectId],
+      );
+      return res.json({
+        result: true,
+        project: modifiedProject.rows[0],
+      });
+    } catch (error) {
+      console.log("Error", error);
+      return res.status(502).json({
+        result: false,
+        error: "Server error when updating project status, try later",
+      });
+    }
+  }
+
+  // Full project modification
   const regex = /\s+/g;
   const slug = title.trim().toLowerCase().replace(regex, "_");
   try {
@@ -287,7 +318,7 @@ router.patch("/:projectId", authJWT, async (req, res) => {
     // Fetch the updated project
     // const modifiedProject = await Project.findById(req.params.projectId);
 
-    res.json({
+    return res.json({
       result: true,
       project: modifiedProject.rows[0],
     });
