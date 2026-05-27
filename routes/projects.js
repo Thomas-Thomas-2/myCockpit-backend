@@ -125,7 +125,7 @@ router.post("/", authJWT, async (req, res) => {
         description,
         req.user.userId,
         req.user.team,
-        sportTeam.trim(),
+        sportTeam.trim().toLowerCase(),
         productEngineer,
         formatDate(kickOff),
         formatDate(feasiOk),
