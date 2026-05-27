@@ -46,9 +46,6 @@ FRONT_URL=http://localhost:3001 <br>
 ## Deployment
 This backend is deployed on Render : https://mycockpit-backend.onrender.com
 
-## Demo
-Watch the demonstration : <br>
-COMING SOON
-
 ## Future improvements
 - Switch to TypeScript ;
+- Endpoints for KPI calculation : SQL request, agregation.
